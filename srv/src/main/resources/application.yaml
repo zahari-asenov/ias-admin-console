@@ -23,3 +23,25 @@ management:
       enabled: true
     db:
       enabled: true
+---
+spring:
+  config:
+    activate:
+      on-profile: cloud
+
+sap:
+  spring:
+    security:
+      identity:
+        prooftoken: false
+---
+spring:
+  config:
+    activate:
+      on-profile: sandbox
+
+sap:
+  spring:
+    security:
+      identity:
+        prooftoken: false

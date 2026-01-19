@@ -7,11 +7,13 @@ type UserStatus : String(8) enum {
   Inactive;
 }
 
+@assert.unique: { uniqueEmail: [ email ] }
+
 entity Users : cuid, managed {
   // ID comes from cuid (UUID). Must not be changed (key).
   firstName   : String(100);                 // optional
   lastName    : String(100) not null;        // required
-  email       : String(255) not null;
+  @assert.unique  email       : String(255) not null;
   userType    : String(50)  not null;
   loginName   : String(255) not null;
 
@@ -28,9 +30,11 @@ entity Users : cuid, managed {
                   on memberships.user = $self;
 }
 
+@assert.unique: { uniqueGroupName: [ name ] }
+
 entity Groups : cuid, managed {
   // ID comes from cuid (UUID). Must not be changed (key).
-  name        : String(255) not null;        // required and immutable by business rule
+  @assert.unique  name        : String(255) not null;        // required and immutable by business rule
   displayName : String(255) not null;        // required and can be edited
 
   description : String(1000);
