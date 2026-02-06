@@ -211,7 +211,6 @@ export const UserDetailPanel = ({
 
               <div>
                 <Grid>
-                  {renderField('ID', 'userId', true)}
                   {renderField('First Name', 'firstName', false)}
                   {renderField('Valid From', 'validFrom', false)}
                   {renderField('Valid To', 'validTo', false)}
@@ -270,13 +269,12 @@ export const UserDetailPanel = ({
                       <Table.Th>Display Name</Table.Th>
                       <Table.Th>Name</Table.Th>
                       <Table.Th>Description</Table.Th>
-                      <Table.Th>Application Name</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
                     {assignedGroups.length === 0 ? (
                       <Table.Tr>
-                        <Table.Td colSpan={5} style={{textAlign: 'center', padding: '40px'}}>
+                        <Table.Td colSpan={4} style={{textAlign: 'center', padding: '40px'}}>
                           <Text c="dimmed">No groups assigned to this user</Text>
                         </Table.Td>
                       </Table.Tr>
@@ -300,7 +298,6 @@ export const UserDetailPanel = ({
                           <Table.Td>{group.displayName}</Table.Td>
                           <Table.Td>{group.name}</Table.Td>
                           <Table.Td>{group.description || '-'}</Table.Td>
-                          <Table.Td>{group.application || '-'}</Table.Td>
                         </Table.Tr>
                       ))
                     )}

@@ -38,7 +38,7 @@ export const AssignGroupsModal = ({
     return (
       group.name.toLowerCase().includes(lowerSearch) ||
       group.displayName.toLowerCase().includes(lowerSearch) ||
-      group.groupId.toLowerCase().includes(lowerSearch) ||
+      group.id.toLowerCase().includes(lowerSearch) ||
       group.description.toLowerCase().includes(lowerSearch)
     );
   });
@@ -122,10 +122,10 @@ export const AssignGroupsModal = ({
                   onChange={handleSelectAll}
                 />
               </Table.Th>
-              <Table.Th>Group ID</Table.Th>
+              <Table.Th>ID</Table.Th>
               <Table.Th>Display Name</Table.Th>
               <Table.Th>Name</Table.Th>
-              <Table.Th>Type</Table.Th>
+              <Table.Th>Description</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -146,10 +146,10 @@ export const AssignGroupsModal = ({
                       onChange={() => handleSelectGroup(group.id)}
                     />
                   </Table.Td>
-                  <Table.Td>{group.groupId}</Table.Td>
-                  <Table.Td>{group.displayName}</Table.Td>
-                  <Table.Td>{group.name}</Table.Td>
-                  <Table.Td>{group.type}</Table.Td>
+                <Table.Td style={{ fontFamily: 'monospace', fontSize: '13px' }}>{group.id}</Table.Td>
+                <Table.Td>{group.displayName}</Table.Td>
+                <Table.Td>{group.name}</Table.Td>
+                <Table.Td>{group.description || '-'}</Table.Td>
                 </Table.Tr>
               ))
             )}

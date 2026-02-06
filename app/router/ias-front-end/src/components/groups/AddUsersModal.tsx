@@ -38,8 +38,7 @@ export const AddUsersModal = ({
     return (
       user.firstName?.toLowerCase().includes(lowerSearch) ||
       user.lastName.toLowerCase().includes(lowerSearch) ||
-      user.email.toLowerCase().includes(lowerSearch) ||
-      user.userId?.toLowerCase().includes(lowerSearch)
+      user.email.toLowerCase().includes(lowerSearch)
     );
   });
 
@@ -122,7 +121,6 @@ export const AddUsersModal = ({
                   onChange={handleSelectAll}
                 />
               </Table.Th>
-              <Table.Th>User ID</Table.Th>
               <Table.Th>First Name</Table.Th>
               <Table.Th>Last Name</Table.Th>
               <Table.Th>Email</Table.Th>
@@ -131,7 +129,7 @@ export const AddUsersModal = ({
           <Table.Tbody>
             {filteredUsers.length === 0 ? (
               <Table.Tr>
-                <Table.Td colSpan={5} style={{textAlign: 'center', color: 'var(--mantine-color-gray-6)'}}>
+                <Table.Td colSpan={4} style={{textAlign: 'center', color: 'var(--mantine-color-gray-6)'}}>
                   {availableUsers.length === 0 
                     ? 'All users are already members' 
                     : 'No users found'}
@@ -146,7 +144,6 @@ export const AddUsersModal = ({
                       onChange={() => handleSelectUser(user.id)}
                     />
                   </Table.Td>
-                  <Table.Td>{user.userId}</Table.Td>
                   <Table.Td>{user.firstName}</Table.Td>
                   <Table.Td>{user.lastName}</Table.Td>
                   <Table.Td>{user.email}</Table.Td>

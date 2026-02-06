@@ -1,7 +1,7 @@
 export type ViewType = 'users' | 'groups';
 
 export interface User {
-  id: string;
+  id: string;  // SCIM ID from the backend response
   // Required fields
   lastName: string;
   email: string;
@@ -9,33 +9,19 @@ export interface User {
   loginName: string;
   status: string;
   // Optional fields
-  userId?: string;
   firstName?: string;
   validFrom?: string;
   validTo?: string;
   company?: string;
   country?: string;
   city?: string;
-  // System fields (kept for backwards compatibility)
-  scimId: string;
-  globalUserId: string;
 }
 
 export interface Group {
-  id: string;
+  id: string;  // SCIM ID from the backend response
   name: string;
   displayName: string;
   description: string;
-  scimId: string;
-  groupId: string;
-  type: string;
-  source: string;
-  memberCount: number;
-  createdDate?: string;
-  modifiedDate?: string;
-  owner?: string;
-  application?: string;
-  status?: string;
 }
 
 export interface UserFormData {
@@ -50,7 +36,6 @@ export interface GroupFormData {
   name: string;
   displayName: string;
   description: string;
-  groupId?: string;
 }
 
 export interface FormErrors {

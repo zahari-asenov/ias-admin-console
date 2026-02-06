@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, Stack, Group as MantineGroup, Button, Paper } from '@mantine/core';
 import type { ViewType, User, Group } from './types';
 import { useUsers } from './hooks/useUsers';
@@ -46,8 +46,56 @@ function App() {
   // DATA HOOKS (get data and CRUD operations)
   // ============================================
   const { users, loading: usersLoading, error: usersError, addUser, updateUser, deleteUsers } = useUsers();
-  const { groups, groupMembers, loading: groupsLoading, error: groupsError, addGroup, updateGroup, deleteGroups, addUsersToGroup, removeUserFromGroup } = useGroups();
+  const { groups, groupMembers, loading: groupsLoading, error: groupsError, addGroup, updateGroup, deleteGroups, addUsersToGroup, removeUserFromGroup, fetchGroupMembers, removeDeletedUsersFromGroups } = useGroups();
   const { selectedIds, toggleSelection, clearSelection, toggleSelectAll } = useSelection();
+
+  // ============================================
+  // SYNC USER GROUPS FROM GROUP MEMBERS
+  // ============================================
+  // Derive userGroups from groupMembers to keep them in sync
+  // This ensures that when groupMembers is updated (via API calls),
+  // userGroups is automatically updated so the user modal shows the latest groups
+  useEffect(() => {
+    const userGroupsMap: { [userId: string]: Group[] } = {};
+    
+    // Build userGroups from groupMembers (inverse relationship)
+    Object.keys(groupMembers).forEach(groupId => {
+      const members = groupMembers[groupId];
+      const group = groups.find(g => g.id === groupId);
+      if (group) {
+        members.forEach(user => {
+          if (!userGroupsMap[user.id]) {
+            userGroupsMap[user.id] = [];
+          }
+          // Only add if not already in the list
+          if (!userGroupsMap[user.id].find(g => g.id === groupId)) {
+            userGroupsMap[user.id].push(group);
+          }
+        });
+      }
+    });
+    
+    // Update userGroups state, but preserve any manually added groups
+    // that might not be in groupMembers yet (during assignment operations)
+    setUserGroups(prev => {
+      const merged = { ...userGroupsMap };
+      // Merge with existing data to preserve any groups that might not be in groupMembers yet
+      Object.keys(prev).forEach(userId => {
+        if (!merged[userId]) {
+          merged[userId] = [];
+        }
+        // Add groups from prev that aren't in the new map
+        // BUT only if the group still exists in the groups array
+        prev[userId].forEach(group => {
+          const groupStillExists = groups.find(g => g.id === group.id);
+          if (groupStillExists && !merged[userId].find(g => g.id === group.id)) {
+            merged[userId].push(group);
+          }
+        });
+      });
+      return merged;
+    });
+  }, [groupMembers, groups]);
 
   // ============================================
   // FILTERING LOGIC
@@ -64,7 +112,6 @@ function App() {
       user.loginName.toLowerCase().includes(lowerSearch) ||
       user.userType.toLowerCase().includes(lowerSearch) ||
       user.status.toLowerCase().includes(lowerSearch) ||
-      (user.userId && user.userId.toLowerCase().includes(lowerSearch)) ||
       (user.firstName && user.firstName.toLowerCase().includes(lowerSearch))
     );
   });
@@ -75,9 +122,9 @@ function App() {
     
     const lowerSearch = searchTerm.toLowerCase();
     return (
-      group.groupId.toLowerCase().includes(lowerSearch) ||
+      group.id.toLowerCase().includes(lowerSearch) ||
       group.name.toLowerCase().includes(lowerSearch) ||
-      group.scimId.toLowerCase().includes(lowerSearch) ||
+      group.displayName.toLowerCase().includes(lowerSearch) ||
       group.description.toLowerCase().includes(lowerSearch)
     );
   });
@@ -124,7 +171,9 @@ function App() {
     
     if (window.confirm(`Are you sure you want to delete ${selectedIds.size} user(s)?`)) {
       try {
-        await deleteUsers(Array.from(selectedIds));
+        const userIdsToDelete = Array.from(selectedIds);
+        await deleteUsers(userIdsToDelete);
+        removeDeletedUsersFromGroups(userIdsToDelete);
         clearSelection();
         // If the selected user was deleted, close the detail panel
         if (selectedUser && selectedIds.has(selectedUser.id)) {
@@ -147,7 +196,7 @@ function App() {
   };
 
   // Create new user (called from create modal)
-  const handleCreateUser = async (user: User) => {
+  const handleCreateUser = async (user: Partial<User>) => {
     try {
       await addUser(user);
     } catch (err) {
@@ -208,7 +257,7 @@ function App() {
   };
 
   // Create new group (called from create modal)
-  const handleCreateGroup = async (group: Group) => {
+  const handleCreateGroup = async (group: Partial<Group>) => {
     try {
       await addGroup(group);
     } catch (err) {

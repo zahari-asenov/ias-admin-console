@@ -50,7 +50,7 @@ export const GroupDetailPanel = ({
 
   const filteredMembers = members.filter(user =>
     memberSearchTerm === '' ||
-    user.scimId.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
+    user.id.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
     user.loginName.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
     user.firstName?.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
     user.lastName.toLowerCase().includes(memberSearchTerm.toLowerCase()) ||
@@ -156,8 +156,8 @@ export const GroupDetailPanel = ({
       size={600}
       title={
         <Stack gap="xs">
-          <Title order={2}>{currentGroup.name}</Title>
-          <Text size="sm" c="dimmed">{currentGroup.groupId}</Text>
+          <Title order={2}>{currentGroup.displayName}</Title>
+          <Text size="sm" c="dimmed">{currentGroup.id}</Text>
         </Stack>
       }
     >
@@ -181,10 +181,20 @@ export const GroupDetailPanel = ({
         <div>
           <Grid>
             <Grid.Col span={6}>
-              <div>
-                <Text size="sm" fw={500} c="dimmed" mb={4}>Group ID</Text>
-                <Text size="sm">{currentGroup.groupId}</Text>
-              </div>
+              {isEditing ? (
+                <TextInput
+                  label="Name"
+                  value={(editedGroup?.name as string) || ''}
+                  onChange={(e) => updateField('name', e.target.value)}
+                  onBlur={() => handleBlur('name')}
+                  error={touched.name ? errors.name : undefined}
+                />
+              ) : (
+                <div>
+                  <Text size="sm" fw={500} c="dimmed" mb={4}>Name</Text>
+                  <Text size="sm">{currentGroup.name}</Text>
+                </div>
+              )}
             </Grid.Col>
             <Grid.Col span={6}>
               {isEditing ? (
@@ -204,11 +214,11 @@ export const GroupDetailPanel = ({
             </Grid.Col>
             <Grid.Col span={6}>
               <div>
-                <Text size="sm" fw={500} c="dimmed" mb={4}>Name</Text>
-                <Text size="sm">{currentGroup.name}</Text>
+                <Text size="sm" fw={500} c="dimmed" mb={4}>ID</Text>
+                <Text size="sm" style={{ fontFamily: 'monospace', fontSize: '13px' }}>{currentGroup.id}</Text>
               </div>
             </Grid.Col>
-            <Grid.Col span={6}>
+            <Grid.Col span={12}>
               {isEditing ? (
                 <Textarea
                   label="Description"
@@ -298,7 +308,7 @@ export const GroupDetailPanel = ({
                         <Table.Td>{user.email}</Table.Td>
                         <Table.Td>{user.loginName}</Table.Td>
                         <Table.Td style={{ fontFamily: 'monospace', fontSize: '13px' }}>
-                          {user.scimId}
+                          {user.id}
                         </Table.Td>
                       </Table.Tr>
                     ))

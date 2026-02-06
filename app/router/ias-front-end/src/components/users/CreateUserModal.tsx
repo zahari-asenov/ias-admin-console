@@ -4,14 +4,13 @@ import type { User, UserFormData, FormErrors } from '../../types';
 import { Modal } from '../common/Modal';
 import { UserForm } from './UserForm';
 import { validateUserForm } from '../../utils/validators';
-import { generateScimId, generateUserId } from '../../utils/generators';
 
 
 interface CreateUserModalProps {
   isOpen: boolean;
   allUsers: User[];
   onClose: () => void;
-  onCreateUser: (user: User) => void;
+  onCreateUser: (user: Partial<User>) => void;
 }
 
 export const CreateUserModal = ({
@@ -75,8 +74,8 @@ export const CreateUserModal = ({
     
     // If no errors, create the user
     if (Object.keys(newErrors).length === 0) {
-      const newUser: User = {
-        id: Date.now().toString(),
+      // Don't generate any IDs - they come from the backend response
+      const newUser: Partial<User> = {
         // Required fields
         lastName: formData.lastName,
         email: formData.email,
@@ -84,14 +83,10 @@ export const CreateUserModal = ({
         loginName: formData.loginName || formData.email.split('@')[0], // Default to email prefix if not provided
         status: 'Active',
         // Optional fields (only include if they have values)
-        userId: generateUserId(allUsers.length),
         firstName: formData.firstName || undefined,
-        // System-generated fields
-        scimId: generateScimId(),
-        globalUserId: `G${generateUserId(allUsers.length)}`
       };
       
-      onCreateUser(newUser);
+      onCreateUser(newUser as User); // Type assertion needed since we don't have id yet
       resetForm();
       onClose();
     } else {

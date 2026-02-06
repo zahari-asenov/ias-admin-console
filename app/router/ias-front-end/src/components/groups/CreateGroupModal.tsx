@@ -4,13 +4,12 @@ import type { Group, GroupFormData, FormErrors } from '../../types';
 import { Modal } from '../common/Modal';
 import { GroupForm } from './GroupForm';
 import { validateGroupForm } from '../../utils/validators';
-import { generateScimId, generateGroupId } from '../../utils/generators';
 
 interface CreateGroupModalProps {
   isOpen: boolean;
   allGroups: Group[];
   onClose: () => void;
-  onCreateGroup: (group: Group) => void;
+  onCreateGroup: (group: Partial<Group>) => void;
 }
 
 export const CreateGroupModal = ({
@@ -57,16 +56,11 @@ export const CreateGroupModal = ({
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length === 0) {
-      const newGroup: Group = {
-        id: Date.now().toString(),
+      // Don't generate any IDs - they come from the backend response
+      const newGroup: Partial<Group> = {
         name: formData.name,
         displayName: formData.displayName,
         description: formData.description,
-        scimId: generateScimId(),
-        groupId: generateGroupId(allGroups.length),
-        type: 'Security',
-        source: 'Manual',
-        memberCount: 0
       };
       
       onCreateGroup(newGroup);

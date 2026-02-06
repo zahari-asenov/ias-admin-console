@@ -34,7 +34,7 @@ export const GroupTable = ({
             <Table.Th>Name</Table.Th>
             <Table.Th>Display Name</Table.Th>
             <Table.Th>Description</Table.Th>
-            <Table.Th>SCIM ID</Table.Th>
+            <Table.Th>ID</Table.Th>
             <Table.Th style={{ width: 50 }}>›</Table.Th>
           </Table.Tr>
         </Table.Thead>
@@ -60,7 +60,7 @@ export const GroupTable = ({
               <Table.Td>{group.displayName}</Table.Td>
               <Table.Td>{group.description}</Table.Td>
               <Table.Td style={{ fontFamily: 'monospace', fontSize: '13px', color: 'var(--mantine-color-gray-6)' }}>
-                {group.scimId}
+                {group.id}
               </Table.Td>
               <Table.Td>›</Table.Td>
             </Table.Tr>
