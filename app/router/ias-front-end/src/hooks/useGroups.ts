@@ -370,6 +370,17 @@ export const useGroups = () => {
     setGroupMembers(updatedGroupMembers);
   };
 
+  // Update user in all groupMembers where they appear (e.g. after user edit)
+  const updateUserInGroupMembers = (updatedUser: User) => {
+    const updatedGroupMembers: { [groupId: string]: User[] } = {};
+    Object.keys(groupMembers).forEach(groupId => {
+      updatedGroupMembers[groupId] = groupMembers[groupId].map(user =>
+        user.id === updatedUser.id ? updatedUser : user
+      );
+    });
+    setGroupMembers(updatedGroupMembers);
+  };
+
   return {
     groups,
     groupMembers,
@@ -382,6 +393,7 @@ export const useGroups = () => {
     removeUserFromGroup,
     fetchGroupMembers,
     removeDeletedUsersFromGroups,
+    updateUserInGroupMembers,
     refetch: fetchGroups
   };
 };

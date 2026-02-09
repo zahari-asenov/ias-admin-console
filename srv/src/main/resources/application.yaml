@@ -36,6 +36,12 @@ spring:
     activate:
       on-profile: cloud
 
+# IAS from bound Identity service (my-ias) - append /scim for SCIM API
+ias:
+  url: ${vcap.services.my-ias.credentials.url}/scim
+  client-id: ${vcap.services.my-ias.credentials.clientid}
+  client-secret: ${vcap.services.my-ias.credentials.clientsecret}
+
 sap:
   spring:
     security:

@@ -122,7 +122,7 @@ function App() {
   // DATA HOOKS (get data and CRUD operations)
   // ============================================
   const { users, loading: usersLoading, error: usersError, addUser, updateUser, deleteUsers } = useUsers();
-  const { groups, groupMembers, loading: groupsLoading, error: groupsError, addGroup, updateGroup, deleteGroups, addUsersToGroup, removeUserFromGroup, removeDeletedUsersFromGroups } = useGroups();
+  const { groups, groupMembers, loading: groupsLoading, error: groupsError, addGroup, updateGroup, deleteGroups, addUsersToGroup, removeUserFromGroup, removeDeletedUsersFromGroups, updateUserInGroupMembers } = useGroups();
   const { selectedIds, toggleSelection, clearSelection, toggleSelectAll } = useSelection();
 
   // ============================================
@@ -313,6 +313,7 @@ function App() {
     try {
       await updateUser(updatedUser);
       setSelectedUser(updatedUser); // Update the selected user to show changes
+      updateUserInGroupMembers(updatedUser); // Update user in group member lists
     } catch (err) {
       alert('Failed to update user. Please try again.');
     }
