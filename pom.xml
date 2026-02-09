@@ -57,6 +57,37 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+
+			<!-- SAP Cloud Security BOM (IAS/XSUAA) - LAST to override SDK versions -->
+			<dependency>
+				<groupId>com.sap.cloud.security</groupId>
+				<artifactId>java-bom</artifactId>
+				<version>3.6.6</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<!-- Force 3.6.6: SDK BOM pulls 3.3.5 otherwise; CAP needs getServicePlans(); 3.6.6 provides JwtDecoder for IAS -->
+			<dependency>
+				<groupId>com.sap.cloud.security</groupId>
+				<artifactId>java-api</artifactId>
+				<version>3.6.6</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sap.cloud.security</groupId>
+				<artifactId>java-security</artifactId>
+				<version>3.6.6</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sap.cloud.security</groupId>
+				<artifactId>resourceserver-security-spring-boot-starter</artifactId>
+				<version>3.6.6</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sap.cloud.security</groupId>
+				<artifactId>spring-security</artifactId>
+				<version>3.6.6</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 

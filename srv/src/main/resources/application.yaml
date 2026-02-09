@@ -7,11 +7,17 @@ cds:
   data-source.auto-config.enabled: false
   security:
     enabled: false
-# IAS Configuration
+# IAS Configuration - use env vars for secrets (IAS_CLIENT_SECRET, etc.)
 ias:
-  url: https://a0adggohp.trial-accounts.ondemand.com/scim
-  client-id: f8d01d08-7847-4554-a995-2652d2e3581e
-  client-secret: YjaC@:XbEw[TeX2:s?/I/3gQkp-6Nioiy
+  url: ${IAS_URL:https://a0adggohp.trial-accounts.ondemand.com/scim}
+  client-id: ${IAS_CLIENT_ID:f8d01d08-7847-4554-a995-2652d2e3581e}
+  client-secret: ${IAS_CLIENT_SECRET:YjaC@:XbEw[TeX2:s?/I/3gQkp-6Nioiy
+}
+sap:
+  spring:
+    security:
+      identity:
+        prooftoken: false
 ---
 management:
   endpoint:
@@ -35,12 +41,23 @@ spring:
   config:
     activate:
       on-profile: cloud
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${IAS_ISSUER_URI:https://a0adggohp.trial-accounts.ondemand.com}
 
-# IAS from bound Identity service (my-ias) - append /scim for SCIM API
+cds:
+  security:
+    identity:
+      enabled: true
+    authentication:
+      mode: always
+# IAS for IasHttpClient (SCIM API) - credentials from env vars or VCAP (IAS binding)
 ias:
-  url: ${vcap.services.my-ias.credentials.url}/scim
-  client-id: ${vcap.services.my-ias.credentials.clientid}
-  client-secret: ${vcap.services.my-ias.credentials.clientsecret}
+  url: ${IAS_URL:https://a0adggohp.trial-accounts.ondemand.com/scim}
+  client-id: ${IAS_CLIENT_ID:f8d01d08-7847-4554-a995-2652d2e3581e}
+  client-secret: ${IAS_CLIENT_SECRET:}
 
 sap:
   spring:

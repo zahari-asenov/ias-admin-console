@@ -1,15 +1,16 @@
 {
+  "authenticationMethod": "route",
   "routes": [
     {
       "source": "^/odata/(.*)$",
-      "target": "odata/$1",
+      "target": "/odata/$1",
       "destination": "srv-api",
       "csrfProtection": true
     },
     {
       "source": "^/(.*)$",
       "localDir": "ias-front-end/dist",
-      "target": "/"
+      "target": "$1"
     }
   ]
 }

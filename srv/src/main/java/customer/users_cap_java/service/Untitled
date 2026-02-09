@@ -1,0 +1,294 @@
+package customer.users_cap_java.service;
+
+import com.sap.cds.ql.Select;
+import com.sap.cds.ql.Insert;
+import com.sap.cds.ql.Update;
+import com.sap.cds.ql.Delete;
+import com.sap.cds.services.persistence.PersistenceService;
+import com.sap.cds.Result;
+import customer.users_cap_java.client.IasHttpClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import cds.gen.iasreplicaservice.Users;
+import cds.gen.iasreplicaservice.Users_;
+import cds.gen.iasreplicaservice.Groups;
+import cds.gen.iasreplicaservice.Groups_;
+import cds.gen.iasreplicaservice.GroupMembers;
+import cds.gen.iasreplicaservice.GroupMembers_;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.util.*;
+
+@Component
+public class IasSyncScheduler {
+
+    private final IasHttpClient iasClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private volatile boolean syncing = false;
+    
+    @Autowired
+    private PersistenceService db;
+    
+    @Autowired
+    private UserServiceHandler userServiceHandler;
+
+    @Autowired
+    public IasSyncScheduler(IasHttpClient iasClient) {
+        this.iasClient = iasClient;
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void syncFromIas() {
+        if (syncing) {
+            System.out.println("[SYNC] Already syncing, skipping...");
+            return;
+        }
+        
+        syncing = true;
+        System.out.println("[SYNC] Starting sync...");
+        
+        try {
+            userServiceHandler.setSyncEnabled(false);
+            
+            syncUsers();
+            syncGroups();
+            syncMemberships();
+            
+            System.out.println("[SYNC] Completed");
+        } catch (Exception e) {
+            System.err.println("[SYNC] Error: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            userServiceHandler.setSyncEnabled(true);
+            syncing = false;
+        }
+    }
+
+    private void syncUsers() throws Exception {
+        String json = iasClient.getUsers();
+        JsonNode resources = objectMapper.readTree(json).get("Resources");
+        
+        if (resources == null) return;
+
+        var dbResult = db.run(Select.from(Users_.class));
+        Map<String, Users> dbUsers = new HashMap<>();
+        for (Users u : dbResult) {
+            dbUsers.put(u.getId(), u);
+        }
+
+        Set<String> iasUserIds = new HashSet<>();
+        
+        for (JsonNode node : resources) {
+            String id = getTextOrNull(node, "id");
+            
+            // CRITICAL: Skip users with null/empty ID
+            if (id == null || id.trim().isEmpty()) {
+                System.err.println("[SYNC] SKIPPING user with null/empty ID");
+                continue;
+            }
+            
+            iasUserIds.add(id);
+            
+            Users user = mapUser(node);
+            
+            if (dbUsers.containsKey(id)) {
+                db.run(Update.entity(Users_.class).data(user).where(u -> u.ID().eq(id)));
+            } else {
+                db.run(Insert.into(Users_.class).entry(user));
+            }
+        }
+        
+        for (String dbId : dbUsers.keySet()) {
+            if (!iasUserIds.contains(dbId)) {
+                db.run(Delete.from(Users_.class).where(u -> u.ID().eq(dbId)));
+            }
+        }
+    }
+
+    private void syncGroups() throws Exception {
+        String json = iasClient.getGroups();
+        System.out.println("[DEBUG] IasSyncScheduler.syncGroups - JSON: " + json);
+        JsonNode resources = objectMapper.readTree(json).get("Resources");
+        
+        if (resources == null) return;
+
+        var dbResult = db.run(Select.from(Groups_.class));
+        Map<String, Groups> dbGroups = new HashMap<>();
+        for (Groups g : dbResult) {
+            dbGroups.put(g.getId(), g);
+            System.out.println("[DEBUG] IasSyncScheduler.syncGroups - DB Group: " + g.getId());
+        }
+
+        Set<String> iasGroupIds = new HashSet<>();
+        
+        for (JsonNode node : resources) {
+            String id = getTextOrNull(node, "id");
+            
+            // CRITICAL: Skip groups with null/empty ID
+            if (id == null || id.trim().isEmpty()) {
+                System.err.println("[SYNC] SKIPPING group with null/empty ID");
+                continue;
+            }
+            
+            iasGroupIds.add(id);
+            
+            Groups group = mapGroup(node);
+            
+            if (dbGroups.containsKey(id)) {
+                db.run(Update.entity(Groups_.class).data(group).where(g -> g.ID().eq(id)));
+            } else {
+                db.run(Insert.into(Groups_.class).entry(group));
+            }
+        }
+        
+        for (String dbId : dbGroups.keySet()) {
+            if (!iasGroupIds.contains(dbId)) {
+                db.run(Delete.from(Groups_.class).where(g -> g.ID().eq(dbId)));
+            }
+        }
+    }
+
+    private void syncMemberships() throws Exception {
+        String json = iasClient.getGroups();
+        JsonNode resources = objectMapper.readTree(json).get("Resources");
+        
+        if (resources == null) return;
+
+        var dbResult = db.run(Select.from(GroupMembers_.class));
+        Set<String> dbKeys = new HashSet<>();
+        for (GroupMembers m : dbResult) {
+            if (m.getGroupId() != null && m.getUserId() != null) {
+                dbKeys.add(m.getGroupId() + ":" + m.getUserId());
+            }
+        }
+
+        Set<String> iasKeys = new HashSet<>();
+        
+        for (JsonNode groupNode : resources) {
+            String groupId = getTextOrNull(groupNode, "id");
+            if (groupId == null || groupId.trim().isEmpty()) continue;
+            
+            JsonNode members = groupNode.get("members");
+            
+            if (members != null && members.isArray()) {
+                for (JsonNode member : members) {
+                    String userId = getTextOrNull(member, "value");
+                    if (userId == null || userId.trim().isEmpty()) continue;
+                    
+                    String key = groupId + ":" + userId;
+                    iasKeys.add(key);
+                    
+                    if (!dbKeys.contains(key)) {
+                        GroupMembers m = GroupMembers.create();
+                        m.setGroupId(groupId);
+                        m.setUserId(userId);
+                        db.run(Insert.into(GroupMembers_.class).entry(m));
+                    }
+                }
+            }
+        }
+        
+        for (String key : dbKeys) {
+            if (!iasKeys.contains(key)) {
+                String[] parts = key.split(":");
+                db.run(Delete.from(GroupMembers_.class)
+                    .where(m -> m.group_ID().eq(parts[0]).and(m.user_ID().eq(parts[1]))));
+            }
+        }
+    }
+
+    // ========== MAPPERS WITH NULL SAFETY ==========
+    
+    private Users mapUser(JsonNode node) {
+        Users user = Users.create();
+        user.setId(getTextOrNull(node, "id"));
+        
+        // CRITICAL: Convert empty strings to null for HANA
+        user.setLoginName(normalizeString(getTextOrNull(node, "userName")));
+        
+        if (node.has("name")) {
+            JsonNode name = node.get("name");
+            user.setFirstName(normalizeString(getTextOrNull(name, "givenName")));
+            user.setLastName(normalizeString(getTextOrNull(name, "familyName")));
+        }
+        
+        if (node.has("emails") && node.get("emails").isArray() && node.get("emails").size() > 0) {
+            user.setEmail(normalizeString(getTextOrNull(node.get("emails").get(0), "value")));
+        }
+        
+        user.setStatus(node.has("active") && node.get("active").asBoolean() ? "Active" : "Inactive");
+        user.setUserType(normalizeString(node.has("userType") ? node.get("userType").asText() : "public"));
+        
+        // SAP extension
+        if (node.has("urn:ietf:params:scim:schemas:extension:sap:2.0:User")) {
+            JsonNode sapExt = node.get("urn:ietf:params:scim:schemas:extension:sap:2.0:User");
+            if (sapExt.has("validFrom") && !sapExt.get("validFrom").isNull()) {
+                try {
+                    user.setValidFrom(Instant.parse(sapExt.get("validFrom").asText()));
+                } catch (Exception ignored) {}
+            }
+            if (sapExt.has("validTo") && !sapExt.get("validTo").isNull()) {
+                try {
+                    user.setValidTo(Instant.parse(sapExt.get("validTo").asText()));
+                } catch (Exception ignored) {}
+            }
+        }
+        
+        // Enterprise extension
+        if (node.has("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User")) {
+            JsonNode entExt = node.get("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User");
+            user.setCompany(normalizeString(getTextOrNull(entExt, "organization")));
+        }
+        
+        // Addresses
+        if (node.has("addresses") && node.get("addresses").isArray() && node.get("addresses").size() > 0) {
+            JsonNode addr = node.get("addresses").get(0);
+            user.setCountry(normalizeString(getTextOrNull(addr, "country")));
+            user.setCity(normalizeString(getTextOrNull(addr, "locality")));
+        }
+        
+        return user;
+    }
+
+    private Groups mapGroup(JsonNode node) {
+        Groups group = Groups.create();
+        group.setId(getTextOrNull(node, "id"));
+        group.setDisplayName(normalizeString(getTextOrNull(node, "displayName")));
+        
+        String extensionKey = "urn:sap:cloud:scim:schemas:extension:custom:2.0:Group";
+        if (node.has(extensionKey)) {
+            JsonNode extension = node.get(extensionKey);
+            group.setName(normalizeString(getTextOrNull(extension, "name")));
+            group.setDescription(normalizeString(getTextOrNull(extension, "description")));
+        }
+        
+        return group;
+    }
+    
+    // ========== UTILITY METHODS FOR HANA COMPATIBILITY ==========
+    
+    /**
+     * Safely extract text from JsonNode, returning null if missing or null
+     */
+    private String getTextOrNull(JsonNode node, String fieldName) {
+        if (node == null || !node.has(fieldName) || node.get(fieldName).isNull()) {
+            return null;
+        }
+        return node.get(fieldName).asText();
+    }
+    
+    /**
+     * Convert empty strings to null for HANA Cloud compatibility
+     * HANA is stricter than H2 about empty strings
+     */
+    private String normalizeString(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        return value.trim();
+    }
+}
