@@ -28,7 +28,7 @@ export const SearchBar = ({
             { value: 'users', label: 'Users' },
             { value: 'groups', label: 'Groups' }
           ]}
-          style={{ width: 150 }}
+          style={{ width: 'clamp(120px, 15vw, 180px)' }}
         />
         <TextInput
           placeholder={placeholder}

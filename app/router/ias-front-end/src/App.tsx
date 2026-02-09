@@ -13,27 +13,103 @@ import { CreateUserModal } from './components/users/CreateUserModal';
 import { CreateGroupModal } from './components/groups/CreateGroupModal';
 import { AddUsersModal } from './components/groups/AddUsersModal';
 import { AssignGroupsModal } from './components/users/AssignGroupsModal';
+import { DeleteConfirmationModal } from './components/common/DeleteConfirmationModal';
 
 function App() {
+  // ============================================
+  // HELPER FUNCTIONS FOR LOCALSTORAGE
+  // ============================================
+  
+  // Helper to get initial state from localStorage
+  const getInitialViewType = (): ViewType => {
+    try {
+      const saved = localStorage.getItem('app-viewType');
+      return (saved === 'users' || saved === 'groups') ? saved : 'users';
+    } catch {
+      return 'users';
+    }
+  };
+
+  const getInitialSelectedUserId = (): string | null => {
+    try {
+      return localStorage.getItem('app-selectedUserId');
+    } catch {
+      return null;
+    }
+  };
+
+  const getInitialSelectedGroupId = (): string | null => {
+    try {
+      return localStorage.getItem('app-selectedGroupId');
+    } catch {
+      return null;
+    }
+  };
+
   // ============================================
   // STATE MANAGEMENT
   // ============================================
   
-  // View state: which tab is active (users or groups)
-  const [viewType, setViewType] = useState<ViewType>('users');
+  // View state: which tab is active (users or groups) - persisted
+  const [viewType, setViewTypeState] = useState<ViewType>(getInitialViewType());
+  const setViewType = (newViewType: ViewType) => {
+    setViewTypeState(newViewType);
+    try {
+      localStorage.setItem('app-viewType', newViewType);
+    } catch (e) {
+      console.error('Failed to save viewType to localStorage', e);
+    }
+  };
   
   // Search state: what the user is searching for
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Selection state: which user/group is currently selected (for detail panel)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  // Selection state: which user/group is currently selected (for detail panel) - persisted by ID
+  const [selectedUserId, setSelectedUserIdState] = useState<string | null>(getInitialSelectedUserId());
+  const [selectedGroupId, setSelectedGroupIdState] = useState<string | null>(getInitialSelectedGroupId());
+  
+  // Actual selected objects (will be restored after data loads)
+  const [selectedUser, setSelectedUserState] = useState<User | null>(null);
+  const [selectedGroup, setSelectedGroupState] = useState<Group | null>(null);
+  
+  // Wrapper functions to update selection and persist
+  const setSelectedUser = (user: User | null) => {
+    setSelectedUserState(user);
+    try {
+      if (user) {
+        localStorage.setItem('app-selectedUserId', user.id);
+        setSelectedUserIdState(user.id);
+      } else {
+        localStorage.removeItem('app-selectedUserId');
+        setSelectedUserIdState(null);
+      }
+    } catch (e) {
+      console.error('Failed to save selectedUserId to localStorage', e);
+    }
+  };
+  
+  const setSelectedGroup = (group: Group | null) => {
+    setSelectedGroupState(group);
+    try {
+      if (group) {
+        localStorage.setItem('app-selectedGroupId', group.id);
+        setSelectedGroupIdState(group.id);
+      } else {
+        localStorage.removeItem('app-selectedGroupId');
+        setSelectedGroupIdState(null);
+      }
+    } catch (e) {
+      console.error('Failed to save selectedGroupId to localStorage', e);
+    }
+  };
   
   // Modal visibility state: which modals are open
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
   const [showAddUsersModal, setShowAddUsersModal] = useState(false);
   const [showAssignGroupsModal, setShowAssignGroupsModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [deleteType, setDeleteType] = useState<'users' | 'groups'>('users');
   
   // Modal context state: which entity the modal is working with
   const [addUsersGroupId, setAddUsersGroupId] = useState<string | null>(null);
@@ -46,7 +122,7 @@ function App() {
   // DATA HOOKS (get data and CRUD operations)
   // ============================================
   const { users, loading: usersLoading, error: usersError, addUser, updateUser, deleteUsers } = useUsers();
-  const { groups, groupMembers, loading: groupsLoading, error: groupsError, addGroup, updateGroup, deleteGroups, addUsersToGroup, removeUserFromGroup, fetchGroupMembers, removeDeletedUsersFromGroups } = useGroups();
+  const { groups, groupMembers, loading: groupsLoading, error: groupsError, addGroup, updateGroup, deleteGroups, addUsersToGroup, removeUserFromGroup, removeDeletedUsersFromGroups } = useGroups();
   const { selectedIds, toggleSelection, clearSelection, toggleSelectAll } = useSelection();
 
   // ============================================
@@ -98,6 +174,46 @@ function App() {
   }, [groupMembers, groups]);
 
   // ============================================
+  // RESTORE SELECTED ITEMS AFTER DATA LOADS
+  // ============================================
+  
+  // Restore selected user after data loads
+  useEffect(() => {
+    if (selectedUserId && users.length > 0) {
+      const user = users.find(u => u.id === selectedUserId);
+      if (user) {
+        setSelectedUserState(user);
+      } else {
+        // User was deleted, clear selection
+        setSelectedUserIdState(null);
+        try {
+          localStorage.removeItem('app-selectedUserId');
+        } catch (e) {
+          console.error('Failed to remove selectedUserId from localStorage', e);
+        }
+      }
+    }
+  }, [users, selectedUserId]);
+
+  // Restore selected group after data loads
+  useEffect(() => {
+    if (selectedGroupId && groups.length > 0) {
+      const group = groups.find(g => g.id === selectedGroupId);
+      if (group) {
+        setSelectedGroupState(group);
+      } else {
+        // Group was deleted, clear selection
+        setSelectedGroupIdState(null);
+        try {
+          localStorage.removeItem('app-selectedGroupId');
+        } catch (e) {
+          console.error('Failed to remove selectedGroupId from localStorage', e);
+        }
+      }
+    }
+  }, [groups, selectedGroupId]);
+
+  // ============================================
   // FILTERING LOGIC
   // ============================================
   
@@ -137,9 +253,10 @@ function App() {
   const handleViewTypeChange = (newViewType: ViewType) => {
     setViewType(newViewType);
     setSearchTerm(''); // Clear search when switching views
-    clearSelection(); // Clear any selected items
-    setSelectedUser(null); // Close detail panels
-    setSelectedGroup(null);
+    // Don't clear selections - let user keep their context across refreshes
+    // clearSelection(); 
+    // setSelectedUser(null);
+    // setSelectedGroup(null);
   };
 
   // ============================================
@@ -166,22 +283,28 @@ function App() {
   };
 
   // Delete selected users
-  const handleDeleteUsers = async () => {
+  const handleDeleteUsers = () => {
     if (selectedIds.size === 0) return;
     
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} user(s)?`)) {
-      try {
-        const userIdsToDelete = Array.from(selectedIds);
-        await deleteUsers(userIdsToDelete);
-        removeDeletedUsersFromGroups(userIdsToDelete);
-        clearSelection();
-        // If the selected user was deleted, close the detail panel
-        if (selectedUser && selectedIds.has(selectedUser.id)) {
-          setSelectedUser(null);
-        }
-      } catch (err) {
-        alert('Failed to delete users. Please try again.');
+    setDeleteType('users');
+    setShowDeleteConfirmModal(true);
+  };
+
+  // Confirm delete users (called from modal)
+  const confirmDeleteUsers = async () => {
+    try {
+      const userIdsToDelete = Array.from(selectedIds);
+      await deleteUsers(userIdsToDelete);
+      removeDeletedUsersFromGroups(userIdsToDelete);
+      clearSelection();
+      // If the selected user was deleted, close the detail panel
+      if (selectedUser && selectedIds.has(selectedUser.id)) {
+        setSelectedUser(null);
       }
+      setShowDeleteConfirmModal(false);
+    } catch (err) {
+      alert('Failed to delete users. Please try again.');
+      setShowDeleteConfirmModal(false);
     }
   };
 
@@ -229,20 +352,26 @@ function App() {
   };
 
   // Delete selected groups
-  const handleDeleteGroups = async () => {
+  const handleDeleteGroups = () => {
     if (selectedIds.size === 0) return;
     
-    if (window.confirm(`Are you sure you want to delete ${selectedIds.size} group(s)?`)) {
-      try {
-        await deleteGroups(Array.from(selectedIds));
-        clearSelection();
-        // If the selected group was deleted, close the detail panel
-        if (selectedGroup && selectedIds.has(selectedGroup.id)) {
-          setSelectedGroup(null);
-        }
-      } catch (err) {
-        alert('Failed to delete groups. Please try again.');
+    setDeleteType('groups');
+    setShowDeleteConfirmModal(true);
+  };
+
+  // Confirm delete groups (called from modal)
+  const confirmDeleteGroups = async () => {
+    try {
+      await deleteGroups(Array.from(selectedIds));
+      clearSelection();
+      // If the selected group was deleted, close the detail panel
+      if (selectedGroup && selectedIds.has(selectedGroup.id)) {
+        setSelectedGroup(null);
       }
+      setShowDeleteConfirmModal(false);
+    } catch (err) {
+      alert('Failed to delete groups. Please try again.');
+      setShowDeleteConfirmModal(false);
     }
   };
 
@@ -393,7 +522,7 @@ function App() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', position: 'relative' }}>
       {/* Main content area */}
-      <Container size="xl" style={{ flex: 1, margin: '40px auto', padding: '0 20px', transition: 'margin-right 0.3s ease' }}>
+      <Container size="xl" style={{ flex: 1, margin: 'clamp(20px, 4vh, 40px) auto', padding: '0 clamp(12px, 2vw, 20px)', transition: 'margin-right 0.3s ease' }}>
         <Stack gap="md">
           {/* Search bar and view switcher */}
           <SearchBar
@@ -526,6 +655,14 @@ function App() {
           setAssignGroupsUserId(null);
         }}
         onAssignGroups={handleAssignGroupsToUser}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={showDeleteConfirmModal}
+        type={deleteType}
+        count={selectedIds.size}
+        onConfirm={deleteType === 'users' ? confirmDeleteUsers : confirmDeleteGroups}
+        onCancel={() => setShowDeleteConfirmModal(false)}
       />
     </div>
   );

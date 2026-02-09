@@ -14,6 +14,7 @@ import {
   Text,
   Divider
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import type { Group, User, FormErrors } from '../../types';
 import { validateField } from '../../utils/validators';
 
@@ -42,6 +43,8 @@ export const GroupDetailPanel = ({
   const [touched, setTouched] = useState<{[key: string]: boolean}>({});
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+  const showLoginName = useMediaQuery('(min-width: 650px)');
+  const showScimId = useMediaQuery('(min-width: 800px)');
 
   if (!group) return null;
 
@@ -71,18 +74,11 @@ export const GroupDetailPanel = ({
     setTouched({});
   };
 
-  const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete the group "${group.name}"?`)) {
-      onClose();
-    }
-  };
-
   const validateForm = (): boolean => {
     if (!editedGroup) return false;
     const newErrors: FormErrors = {};
     
-    const nameError = validateField('name', editedGroup.name, 'group', allGroups.filter(g => g.id !== group.id));
-    if (nameError) newErrors.name = nameError;
+    // Name is read-only, no validation needed
     
     const displayNameError = validateField('displayName', editedGroup.displayName, 'group', allGroups);
     if (displayNameError) newErrors.displayName = displayNameError;
@@ -138,12 +134,10 @@ export const GroupDetailPanel = ({
 
   const handleRemoveSelected = () => {
     if (selectedMemberIds.size === 0) return;
-    if (window.confirm(`Remove ${selectedMemberIds.size} user(s) from this group?`)) {
-      selectedMemberIds.forEach(userId => {
-        onRemoveUserFromGroup(group.id, userId);
-      });
-      setSelectedMemberIds(new Set());
-    }
+    selectedMemberIds.forEach(userId => {
+      onRemoveUserFromGroup(group.id, userId);
+    });
+    setSelectedMemberIds(new Set());
   };
 
   const allMembersSelected = filteredMembers.length > 0 && selectedMemberIds.size === filteredMembers.length;
@@ -153,11 +147,16 @@ export const GroupDetailPanel = ({
       opened={!!group}
       onClose={onClose}
       position="right"
-      size={600}
+      size="max(320px, min(900px, max(55vw, 100vw)))"
+      offset={0}
       title={
-        <Stack gap="xs">
-          <Title order={2}>{currentGroup.displayName}</Title>
-          <Text size="sm" c="dimmed">{currentGroup.id}</Text>
+        <Stack gap="xs" style={{ minWidth: 0 }}>
+          <Title order={2} style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+            {currentGroup.displayName}
+          </Title>
+          <Text size="sm" c="dimmed" style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+            {currentGroup.id}
+          </Text>
         </Stack>
       }
     >
@@ -169,10 +168,7 @@ export const GroupDetailPanel = ({
               <Button variant="outline" onClick={handleCancel}>Cancel</Button>
             </>
           ) : (
-            <>
-              <Button onClick={handleEdit}>Edit</Button>
-              <Button variant="outline" color="red" onClick={handleDelete}>Delete</Button>
-            </>
+            <Button onClick={handleEdit}>Edit</Button>
           )}
         </MantineGroup>
 
@@ -181,20 +177,10 @@ export const GroupDetailPanel = ({
         <div>
           <Grid>
             <Grid.Col span={6}>
-              {isEditing ? (
-                <TextInput
-                  label="Name"
-                  value={(editedGroup?.name as string) || ''}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  onBlur={() => handleBlur('name')}
-                  error={touched.name ? errors.name : undefined}
-                />
-              ) : (
-                <div>
-                  <Text size="sm" fw={500} c="dimmed" mb={4}>Name</Text>
-                  <Text size="sm">{currentGroup.name}</Text>
-                </div>
-              )}
+              <div>
+                <Text size="sm" fw={500} c="dimmed" mb={4}>Name</Text>
+                <Text size="sm">{currentGroup.name}</Text>
+              </div>
             </Grid.Col>
             <Grid.Col span={6}>
               {isEditing ? (
@@ -215,7 +201,9 @@ export const GroupDetailPanel = ({
             <Grid.Col span={6}>
               <div>
                 <Text size="sm" fw={500} c="dimmed" mb={4}>ID</Text>
-                <Text size="sm" style={{ fontFamily: 'monospace', fontSize: '13px' }}>{currentGroup.id}</Text>
+                <Text size="sm" style={{ fontFamily: 'monospace', fontSize: '13px', wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                  {currentGroup.id}
+                </Text>
               </div>
             </Grid.Col>
             <Grid.Col span={12}>
@@ -229,7 +217,9 @@ export const GroupDetailPanel = ({
               ) : (
                 <div>
                   <Text size="sm" fw={500} c="dimmed" mb={4}>Description</Text>
-                  <Text size="sm">{currentGroup.description || '-'}</Text>
+                  <Text size="sm" style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                    {currentGroup.description || '-'}
+                  </Text>
                 </div>
               )}
             </Grid.Col>
@@ -241,7 +231,7 @@ export const GroupDetailPanel = ({
         <div>
           <Stack gap="md">
             <MantineGroup justify="space-between" align="center">
-              <Title order={4}>User Members</Title>
+              <Title order={4}>Members</Title>
               <MantineGroup gap="sm">
                 <Button size="sm" onClick={() => onOpenAddUsers(group.id)}>
                   Add
@@ -264,31 +254,31 @@ export const GroupDetailPanel = ({
               onChange={(e) => setMemberSearchTerm(e.target.value)}
             />
 
-            <Text size="sm" c="dimmed">
-              Users ({filteredMembers.length} out of {members.length})
-            </Text>
-
-            <Paper withBorder>
-              <Table>
+            <Paper withBorder style={{ overflow: 'hidden' }}>
+              <Table style={{ tableLayout: 'fixed', width: '100%' }}>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th style={{ width: 50 }}>
+                    <Table.Th style={{ width: 48, minWidth: 48 }}>
                       <Checkbox 
                         checked={allMembersSelected}
                         onChange={handleSelectAllMembers}
                       />
                     </Table.Th>
-                    <Table.Th>First Name</Table.Th>
-                    <Table.Th>Last Name</Table.Th>
-                    <Table.Th>Email</Table.Th>
-                    <Table.Th>Login Name</Table.Th>
-                    <Table.Th>SCIM ID</Table.Th>
+                    <Table.Th style={{ width: showLoginName && showScimId ? '18%' : showLoginName || showScimId ? '22%' : '30%' }}>First Name</Table.Th>
+                    <Table.Th style={{ width: showLoginName && showScimId ? '18%' : showLoginName || showScimId ? '22%' : '30%' }}>Last Name</Table.Th>
+                    <Table.Th style={{ width: showLoginName && showScimId ? '22%' : showLoginName || showScimId ? '26%' : '38%' }}>Email</Table.Th>
+                    {showLoginName && (
+                      <Table.Th style={{ width: showScimId ? '14%' : '18%' }}>Login Name</Table.Th>
+                    )}
+                    {showScimId && (
+                      <Table.Th style={{ width: '20%' }}>SCIM ID</Table.Th>
+                    )}
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
                   {filteredMembers.length === 0 ? (
                     <Table.Tr>
-                      <Table.Td colSpan={6} style={{textAlign: 'center', padding: '40px'}}>
+                      <Table.Td colSpan={[showLoginName, showScimId].filter(Boolean).length + 4} style={{textAlign: 'center', padding: '40px'}}>
                         <Text c="dimmed">
                           {members.length === 0 ? 'No members in this group' : 'No matching members found'}
                         </Text>
@@ -303,13 +293,25 @@ export const GroupDetailPanel = ({
                             onChange={() => handleSelectMember(user.id)}
                           />
                         </Table.Td>
-                        <Table.Td>{user.firstName}</Table.Td>
-                        <Table.Td>{user.lastName}</Table.Td>
-                        <Table.Td>{user.email}</Table.Td>
-                        <Table.Td>{user.loginName}</Table.Td>
-                        <Table.Td style={{ fontFamily: 'monospace', fontSize: '13px' }}>
-                          {user.id}
+                        <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                          {user.firstName}
                         </Table.Td>
+                        <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                          {user.lastName}
+                        </Table.Td>
+                        <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                          {user.email}
+                        </Table.Td>
+                        {showLoginName && (
+                          <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                            {user.loginName}
+                          </Table.Td>
+                        )}
+                        {showScimId && (
+                          <Table.Td style={{ fontFamily: 'monospace', fontSize: '13px', wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                            {user.id}
+                          </Table.Td>
+                        )}
                       </Table.Tr>
                     ))
                   )}

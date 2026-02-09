@@ -24,11 +24,11 @@ const mapGroupToApiGroupForCreate = (group: Partial<Group>): any => {
   };
 };
 
-// Map Group type to API format (for PATCH - includes ID)
+// Map Group type to API format (for PATCH - includes ID, excludes immutable name)
 const mapGroupToApiGroup = (group: Group): any => {
   return {
     ID: group.id,  // id is the SCIM ID
-    name: group.name,
+    // Don't send name - it's immutable per schema
     displayName: group.displayName,
     description: group.description,
   };
@@ -139,11 +139,12 @@ export const useGroups = () => {
           // Map the user data
           console.log(`Step 6.${index + 1}: Mapping user data...`);
           const scimId = userData.ID || userData.id || String(userData.ID || userData.id || '');
+          const userType = (userData.userType || '').charAt(0).toUpperCase() + (userData.userType || '').slice(1).toLowerCase();
           const mappedUser = {
             id: scimId,
             lastName: userData.lastName || '',
             email: userData.email || '',
-            userType: userData.userType || '',
+            userType,
             loginName: userData.loginName || '',
             status: userData.status || '',
             firstName: userData.firstName,

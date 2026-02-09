@@ -8,12 +8,16 @@ export const validateUserForm = (
   
   if (formData.firstName && formData.firstName.length < 2) {
     errors.firstName = 'First Name must be at least 2 characters';
+  } else if (formData.firstName && formData.firstName.length > 65) {
+    errors.firstName = 'First Name must not exceed 65 characters';
   }
   
   if (!formData.lastName.trim()) {
     errors.lastName = 'Last Name is required';
   } else if (formData.lastName.length < 2) {
     errors.lastName = 'Last Name must be at least 2 characters';
+  } else if (formData.lastName.length > 65) {
+    errors.lastName = 'Last Name must not exceed 65 characters';
   }
   
   if (!formData.email.trim()) {
@@ -66,9 +70,14 @@ export const validateField = (
 ): string | undefined => {
   if (formType === 'user') {
     switch(field) {
+      case 'firstName':
+        if (value && value.length < 2) return 'First Name must be at least 2 characters';
+        if (value && value.length > 65) return 'First Name must not exceed 65 characters';
+        break;
       case 'lastName':
         if (!value.trim()) return 'Last Name is required';
         if (value.length < 2) return 'Last Name must be at least 2 characters';
+        if (value.length > 65) return 'Last Name must not exceed 65 characters';
         break;
       case 'email':
         if (!value.trim()) return 'Email is required';

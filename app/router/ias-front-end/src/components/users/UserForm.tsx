@@ -24,6 +24,7 @@ export const UserForm = ({
         value={formData.firstName}
         onChange={(e) => onFieldChange('firstName', e.target.value)}
         onBlur={() => onFieldBlur('firstName')}
+        maxLength={65}
       />
 
       <TextInput
@@ -33,6 +34,7 @@ export const UserForm = ({
         onChange={(e) => onFieldChange('lastName', e.target.value)}
         onBlur={() => onFieldBlur('lastName')}
         error={touched.lastName ? errors.lastName : undefined}
+        maxLength={65}
       />
 
       <TextInput
@@ -51,10 +53,27 @@ export const UserForm = ({
         value={formData.userType}
         onChange={(value) => onFieldChange('userType', value || 'Employee')}
         data={[
+          { value: 'Customer', label: 'Customer' },
           { value: 'Employee', label: 'Employee' },
-          { value: 'Contractor', label: 'Contractor' },
-          { value: 'External', label: 'External' }
+          { value: 'Partner', label: 'Partner' },
+          { value: 'Public', label: 'Public' },
+          { value: 'External', label: 'External' },
+          { value: 'Onboardee', label: 'Onboardee' },
+          { value: 'Alumni', label: 'Alumni' }
         ]}
+        maxDropdownHeight={280}
+        comboboxProps={{
+          offset: 0,
+          shadow: 'sm'
+        }}
+        styles={{
+          dropdown: {
+            border: '2px solid var(--mantine-color-default-border)'
+          },
+          option: {
+            borderBottom: '1px solid var(--mantine-color-gray-3)'
+          }
+        }}
       />
 
       <TextInput

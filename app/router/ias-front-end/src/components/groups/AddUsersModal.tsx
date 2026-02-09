@@ -89,17 +89,18 @@ export const AddUsersModal = ({
   return (
     <Modal
       isOpen={isOpen}
-      title="Add Users to Group"
+      title="Add Users"
       onClose={handleClose}
+      size="xl"
       footer={
         <MantineGroup justify="flex-end" gap="sm">
-          <Button variant="outline" onClick={handleClose}>Cancel</Button>
           <Button 
             onClick={handleAdd}
-            disabled={selectedUserIds.size === 0}
           >
-            Add ({selectedUserIds.size})
+            Add
           </Button>
+          <Button variant="outline" onClick={handleClose}>Cancel</Button>
+          
         </MantineGroup>
       }
     >
@@ -112,18 +113,18 @@ export const AddUsersModal = ({
         />
         
         {/* Users table */}
-        <Table>
+        <Table style={{ tableLayout: 'fixed', width: '100%' }}>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th style={{ width: 50 }}>
+              <Table.Th style={{ width: 48, minWidth: 48 }}>
                 <Checkbox 
                   checked={allSelected}
                   onChange={handleSelectAll}
                 />
               </Table.Th>
-              <Table.Th>First Name</Table.Th>
-              <Table.Th>Last Name</Table.Th>
-              <Table.Th>Email</Table.Th>
+              <Table.Th style={{ width: '30%' }}>First Name</Table.Th>
+              <Table.Th style={{ width: '30%' }}>Last Name</Table.Th>
+              <Table.Th style={{ width: '38%' }}>Email</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -144,9 +145,15 @@ export const AddUsersModal = ({
                       onChange={() => handleSelectUser(user.id)}
                     />
                   </Table.Td>
-                  <Table.Td>{user.firstName}</Table.Td>
-                  <Table.Td>{user.lastName}</Table.Td>
-                  <Table.Td>{user.email}</Table.Td>
+                  <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                    {user.firstName}
+                  </Table.Td>
+                  <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                    {user.lastName}
+                  </Table.Td>
+                  <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                    {user.email}
+                  </Table.Td>
                 </Table.Tr>
               ))
             )}

@@ -15,8 +15,10 @@ import {
   Text,
   Divider
 } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import type { User, Group, FormErrors } from '../../types';
 import { validateField } from '../../utils/validators';
+import { COUNTRIES, getCountryName } from '../../data/countries';
 
 interface UserDetailPanelProps {
   user: User | null;
@@ -43,6 +45,8 @@ export const UserDetailPanel = ({
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<{[key: string]: boolean}>({});
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<string>('details');
+  const showDescription = useMediaQuery('(min-width: 650px)');
 
   if (!user) return null;
 
@@ -106,6 +110,22 @@ export const UserDetailPanel = ({
   const renderField = (label: string, key: keyof User, readonly = false) => {
     const value = (currentUser[key] as string) || '';
     
+    const selectDropdownProps = {
+      maxDropdownHeight: 280,
+      comboboxProps: {
+        offset: 0,
+        shadow: 'sm'
+      } as const,
+      styles: {
+        dropdown: {
+          border: '2px solid var(--mantine-color-default-border)'
+        },
+        option: {
+          borderBottom: '1px solid var(--mantine-color-gray-3)'
+        }
+      }
+    };
+
     if (key === 'status' && isEditing && !readonly) {
       return (
         <Grid.Col span={6} key={key}>
@@ -120,22 +140,99 @@ export const UserDetailPanel = ({
               { value: 'Inactive', label: 'Inactive' }
             ]}
             readOnly={readonly}
+            {...selectDropdownProps}
           />
         </Grid.Col>
       );
     }
 
-    if ((key === 'validFrom' || key === 'validTo') && isEditing && !readonly) {
+    if (key === 'userType' && isEditing && !readonly) {
       return (
         <Grid.Col span={6} key={key}>
-          <TextInput
+          <Select
             label={label}
-            type="date"
             value={value}
-            onChange={(e) => updateField(key, e.target.value)}
+            onChange={(val) => updateField(key, val || '')}
             onBlur={() => handleBlur(key)}
             error={touched[key] ? errors[key] : undefined}
+            data={[
+              { value: 'Customer', label: 'Customer' },
+              { value: 'Employee', label: 'Employee' },
+              { value: 'Partner', label: 'Partner' },
+              { value: 'Public', label: 'Public' },
+              { value: 'External', label: 'External' },
+              { value: 'Onboardee', label: 'Onboardee' },
+              { value: 'Alumni', label: 'Alumni' }
+            ]}
+            readOnly={readonly}
+            {...selectDropdownProps}
           />
+        </Grid.Col>
+      );
+    }
+
+    if (key === 'country') {
+      if (isEditing && !readonly) {
+        return (
+          <Grid.Col span={6} key={key}>
+            <Select
+              label={label}
+              value={value || null}
+              onChange={(val) => updateField(key, val || '')}
+              onBlur={() => handleBlur(key)}
+              error={touched[key] ? errors[key] : undefined}
+              data={COUNTRIES}
+              searchable
+              clearable
+              placeholder="Select country"
+              {...selectDropdownProps}
+            />
+          </Grid.Col>
+        );
+      }
+      const countryLabel = value ? getCountryName(value) || value : '-';
+      return (
+        <Grid.Col span={6} key={key}>
+          <div>
+            <Text size="sm" fw={500} c="dimmed" mb={4}>{label}</Text>
+            <Text size="sm" style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+              {countryLabel}
+            </Text>
+          </div>
+        </Grid.Col>
+      );
+    }
+
+    if (key === 'validFrom' || key === 'validTo') {
+      // Normalize for date input: ISO string -> YYYY-MM-DD
+      const dateValue = (value && typeof value === 'string')
+        ? value.slice(0, 10)
+        : (value || '');
+
+      if (isEditing && !readonly) {
+        return (
+          <Grid.Col span={6} key={key}>
+            <TextInput
+              label={label}
+              type="date"
+              value={dateValue}
+              min="1900-01-01"
+              onChange={(e) => updateField(key, e.target.value)}
+              onBlur={() => handleBlur(key)}
+              error={touched[key] ? errors[key] : undefined}
+            />
+          </Grid.Col>
+        );
+      }
+
+      return (
+        <Grid.Col span={6} key={key}>
+          <div>
+            <Text size="sm" fw={500} c="dimmed" mb={4}>{label}</Text>
+            <Text size="sm" style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+              {dateValue || '-'}
+            </Text>
+          </div>
         </Grid.Col>
       );
     }
@@ -150,11 +247,12 @@ export const UserDetailPanel = ({
             onBlur={() => handleBlur(key)}
             error={touched[key] ? errors[key] : undefined}
             readOnly={readonly}
+            maxLength={key === 'firstName' || key === 'lastName' ? 65 : undefined}
           />
         ) : (
           <div>
             <Text size="sm" fw={500} c="dimmed" mb={4}>{label}</Text>
-            <Text size="sm">{value || '-'}</Text>
+            <Text size="sm" style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>{value || '-'}</Text>
           </div>
         )}
       </Grid.Col>
@@ -164,16 +262,48 @@ export const UserDetailPanel = ({
   const assignedGroups = userGroups[user.id] || [];
   const allGroupsSelected = assignedGroups.length > 0 && selectedGroupIds.size === assignedGroups.length;
 
+  const fullName = [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ') || currentUser.lastName;
+
   return (
     <Drawer
       opened={!!user}
       onClose={onClose}
       position="right"
-      size={600}
+      size="max(320px, min(650px, max(42vw, 100vw)))"
+      offset={0}
+      styles={{
+        title: {
+          minWidth: 0,
+          maxWidth: 'calc(100% - 80px)',
+          overflow: 'hidden'
+        }
+      }}
       title={
-        <Stack gap="xs">
-          <Title order={2}>{currentUser.lastName}</Title>
-          <Text size="sm" c="dimmed">{currentUser.email}</Text>
+        <Stack gap="xs" style={{ minWidth: 0, maxWidth: '100%' }}>
+          <Text 
+            size="xl" 
+            fw={700}
+            title={fullName}
+            style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {fullName}
+          </Text>
+          <Text 
+            size="sm" 
+            c="dimmed"
+            title={currentUser.email}
+            style={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {currentUser.email}
+          </Text>
         </Stack>
       }
     >
@@ -185,11 +315,16 @@ export const UserDetailPanel = ({
               <Button variant="outline" onClick={handleCancel}>Cancel</Button>
             </>
           ) : (
-            <Button onClick={handleEdit}>Edit</Button>
+            <Button 
+              onClick={handleEdit}
+              style={{ visibility: activeTab === 'details' ? 'visible' : 'hidden' }}
+            >
+              Edit
+            </Button>
           )}
         </MantineGroup>
 
-        <Tabs defaultValue="details">
+        <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'details')}>
           <Tabs.List>
             <Tabs.Tab value="details">Details</Tabs.Tab>
             <Tabs.Tab value="groups">Groups</Tabs.Tab>
@@ -199,11 +334,32 @@ export const UserDetailPanel = ({
             <Stack gap="lg">
               <div>
                 <Grid>
+                  <Grid.Col span={12}>
+                    <div>
+                      <Text size="sm" fw={500} c="dimmed" mb={4}>SCIM ID</Text>
+                      <Text size="sm" style={{ fontFamily: 'monospace', fontSize: '13px', wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                        {currentUser.id}
+                      </Text>
+                    </div>
+                  </Grid.Col>
+                  {renderField('First Name', 'firstName', false)}
                   {renderField('Last Name', 'lastName', false)}
                   {renderField('Email', 'email', false)}
                   {renderField('User Type', 'userType', false)}
                   {renderField('Login Name', 'loginName', false)}
                   {renderField('Status', 'status', false)}
+                  {renderField('Country', 'country', false)}
+                  {renderField('City', 'city', false)}
+                </Grid>
+              </div>
+              
+              <Divider />
+
+              <div>
+                
+                <Grid>
+                  {renderField('Valid From', 'validFrom', false)}
+                  {renderField('Valid To', 'validTo', false)}
                 </Grid>
               </div>
 
@@ -211,12 +367,7 @@ export const UserDetailPanel = ({
 
               <div>
                 <Grid>
-                  {renderField('First Name', 'firstName', false)}
-                  {renderField('Valid From', 'validFrom', false)}
-                  {renderField('Valid To', 'validTo', false)}
                   {renderField('Company', 'company', false)}
-                  {renderField('Country', 'country', false)}
-                  {renderField('City', 'city', false)}
                 </Grid>
               </div>
             </Stack>
@@ -236,12 +387,10 @@ export const UserDetailPanel = ({
                     color="red"
                     onClick={() => {
                       if (selectedGroupIds.size === 0) return;
-                      if (window.confirm(`Unassign ${selectedGroupIds.size} group(s) from this user?`)) {
-                        selectedGroupIds.forEach(groupId => {
-                          onUnassignGroupFromUser(user.id, groupId);
-                        });
-                        setSelectedGroupIds(new Set());
-                      }
+                      selectedGroupIds.forEach(groupId => {
+                        onUnassignGroupFromUser(user.id, groupId);
+                      });
+                      setSelectedGroupIds(new Set());
                     }}
                     disabled={selectedGroupIds.size === 0}
                   >
@@ -250,11 +399,11 @@ export const UserDetailPanel = ({
                 </MantineGroup>
               </MantineGroup>
 
-              <Paper withBorder>
-                <Table>
+              <Paper withBorder style={{ overflow: 'hidden' }}>
+                <Table style={{ tableLayout: 'fixed', width: '100%' }}>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th style={{ width: 50 }}>
+                      <Table.Th style={{ width: 48, minWidth: 48 }}>
                         <Checkbox 
                           checked={allGroupsSelected}
                           onChange={(e) => {
@@ -266,15 +415,17 @@ export const UserDetailPanel = ({
                           }}
                         />
                       </Table.Th>
-                      <Table.Th>Display Name</Table.Th>
-                      <Table.Th>Name</Table.Th>
-                      <Table.Th>Description</Table.Th>
+                      <Table.Th style={{ width: showDescription ? '25%' : '45%' }}>Display Name</Table.Th>
+                      <Table.Th style={{ width: showDescription ? '25%' : '53%' }}>Name</Table.Th>
+                      {showDescription && (
+                        <Table.Th style={{ width: '40%' }}>Description</Table.Th>
+                      )}
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
                     {assignedGroups.length === 0 ? (
                       <Table.Tr>
-                        <Table.Td colSpan={4} style={{textAlign: 'center', padding: '40px'}}>
+                        <Table.Td colSpan={showDescription ? 4 : 3} style={{textAlign: 'center', padding: '40px'}}>
                           <Text c="dimmed">No groups assigned to this user</Text>
                         </Table.Td>
                       </Table.Tr>
@@ -295,9 +446,17 @@ export const UserDetailPanel = ({
                               }}
                             />
                           </Table.Td>
-                          <Table.Td>{group.displayName}</Table.Td>
-                          <Table.Td>{group.name}</Table.Td>
-                          <Table.Td>{group.description || '-'}</Table.Td>
+                          <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                            {group.displayName}
+                          </Table.Td>
+                          <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                            {group.name}
+                          </Table.Td>
+                          {showDescription && (
+                            <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                              {group.description || '-'}
+                            </Table.Td>
+                          )}
                         </Table.Tr>
                       ))
                     )}

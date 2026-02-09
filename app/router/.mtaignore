@@ -1,0 +1,13 @@
+ias-front-end/node_modules
+ias-front-end/src
+ias-front-end/public
+ias-front-end/*.json
+ias-front-end/*.ts
+ias-front-end/*.js
+ias-front-end/.gitignore
+ias-front-end/README.md
+ias-front-end/eslint.config.js
+ias-front-end/tsconfig*.json
+ias-front-end/vite.config.ts
+ias-front-end/index.html
+!ias-front-end/dist

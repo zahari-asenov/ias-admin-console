@@ -54,6 +54,19 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+
+		<!-- SAP Cloud SDK OpenAPI -->
+		<dependency>
+			<groupId>com.sap.cloud.sdk.datamodel</groupId>
+			<artifactId>openapi-core</artifactId>
+		</dependency>
+
+		<!-- Swagger Annotations for generated OpenAPI classes -->
+		<dependency>
+			<groupId>io.swagger.core.v3</groupId>
+			<artifactId>swagger-annotations</artifactId>
+			<version>2.2.22</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -140,6 +153,29 @@
 							<cqnServiceGetters>true</cqnServiceGetters>
 							<linkedInterfaces>true</linkedInterfaces>
 							<interfacesForAspects>true</interfacesForAspects>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			
+
+			<!-- Add generated sources to build path -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.4.0</version>
+				<executions>
+					<execution>
+						<id>add-openapi-sources</id>
+						<phase>process-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${project.basedir}/openapi</source>
+							</sources>
 						</configuration>
 					</execution>
 				</executions>

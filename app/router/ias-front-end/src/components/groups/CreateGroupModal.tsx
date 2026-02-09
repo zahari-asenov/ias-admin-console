@@ -87,8 +87,8 @@ export const CreateGroupModal = ({
       onClose={handleClose}
       footer={
         <MantineGroup justify="flex-end" gap="sm">
-          <Button variant="outline" onClick={handleClose}>Cancel</Button>
           <Button onClick={handleCreate}>Create</Button>
+          <Button variant="outline" onClick={handleClose}>Cancel</Button>
         </MantineGroup>
       }
     >

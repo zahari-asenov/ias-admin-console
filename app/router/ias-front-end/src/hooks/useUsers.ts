@@ -1,6 +1,24 @@
 import { useState, useEffect } from 'react';
 import type { User } from '../types';
 
+// Capitalize user type (backend may send lowercase, e.g. "employee" -> "Employee")
+const capitalizeUserType = (str: string): string => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
+// Parse date to ISO 8601 for backend (YYYY-MM-DD -> YYYY-MM-DDTHH:mm:ssZ, empty -> undefined)
+const toDateTimeIso = (value: string | undefined): string | undefined => {
+  if (!value || typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  // Already full ISO (has 'T') - pass through
+  if (trimmed.includes('T')) return trimmed;
+  // Date-only YYYY-MM-DD - append midnight UTC
+  if (trimmed.length === 10) return `${trimmed}T00:00:00Z`;
+  return trimmed;
+};
+
 // Map API response to User type
 const mapApiUserToUser = (apiUser: any): User => {
   // The ID from the response is the SCIM ID (set by backend)
@@ -10,7 +28,7 @@ const mapApiUserToUser = (apiUser: any): User => {
     id: scimId,  // SCIM ID is the id
     lastName: apiUser.lastName || '',
     email: apiUser.email || '',
-    userType: apiUser.userType || '',
+    userType: capitalizeUserType(apiUser.userType || ''),
     loginName: apiUser.loginName || '',
     status: apiUser.status || '',
     firstName: apiUser.firstName,
@@ -32,8 +50,8 @@ const mapUserToApiUserForCreate = (user: Partial<User>): any => {
     loginName: user.loginName,
     status: user.status,
     firstName: user.firstName,
-    validFrom: user.validFrom,
-    validTo: user.validTo,
+    validFrom: toDateTimeIso(user.validFrom),
+    validTo: toDateTimeIso(user.validTo),
     company: user.company,
     country: user.country,
     city: user.city,
@@ -50,8 +68,8 @@ const mapUserToApiUser = (user: User): any => {
     loginName: user.loginName,
     status: user.status,
     firstName: user.firstName,
-    validFrom: user.validFrom,
-    validTo: user.validTo,
+    validFrom: toDateTimeIso(user.validFrom),
+    validTo: toDateTimeIso(user.validTo),
     company: user.company,
     country: user.country,
     city: user.city,

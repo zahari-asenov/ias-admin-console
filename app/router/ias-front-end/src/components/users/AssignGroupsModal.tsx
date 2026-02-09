@@ -90,17 +90,18 @@ export const AssignGroupsModal = ({
   return (
     <Modal
       isOpen={isOpen}
-      title="Assign Groups to User"
+      title="Assign Groups"
       onClose={handleClose}
+      size="xl"
       footer={
         <MantineGroup justify="flex-end" gap="sm">
-          <Button variant="outline" onClick={handleClose}>Cancel</Button>
           <Button 
             onClick={handleAssign}
-            disabled={selectedGroupIds.size === 0}
           >
-            Assign ({selectedGroupIds.size})
+            Assign 
           </Button>
+          <Button variant="outline" onClick={handleClose}>Cancel</Button>
+          
         </MantineGroup>
       }
     >
@@ -113,19 +114,19 @@ export const AssignGroupsModal = ({
         />
         
         {/* Groups table */}
-        <Table>
+        <Table style={{ tableLayout: 'fixed', width: '100%' }}>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th style={{ width: 50 }}>
+              <Table.Th style={{ width: 48, minWidth: 48 }}>
                 <Checkbox 
                   checked={allSelected}
                   onChange={handleSelectAll}
                 />
               </Table.Th>
-              <Table.Th>ID</Table.Th>
-              <Table.Th>Display Name</Table.Th>
-              <Table.Th>Name</Table.Th>
-              <Table.Th>Description</Table.Th>
+              <Table.Th style={{ width: '22%' }}>ID</Table.Th>
+              <Table.Th style={{ width: '24%' }}>Display Name</Table.Th>
+              <Table.Th style={{ width: '24%' }}>Name</Table.Th>
+              <Table.Th style={{ width: '28%' }}>Description</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -146,10 +147,18 @@ export const AssignGroupsModal = ({
                       onChange={() => handleSelectGroup(group.id)}
                     />
                   </Table.Td>
-                <Table.Td style={{ fontFamily: 'monospace', fontSize: '13px' }}>{group.id}</Table.Td>
-                <Table.Td>{group.displayName}</Table.Td>
-                <Table.Td>{group.name}</Table.Td>
-                <Table.Td>{group.description || '-'}</Table.Td>
+                <Table.Td style={{ fontFamily: 'monospace', fontSize: '13px', wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                  {group.id}
+                </Table.Td>
+                <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                  {group.displayName}
+                </Table.Td>
+                <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                  {group.name}
+                </Table.Td>
+                <Table.Td style={{ wordWrap: 'break-word', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+                  {group.description || '-'}
+                </Table.Td>
                 </Table.Tr>
               ))
             )}

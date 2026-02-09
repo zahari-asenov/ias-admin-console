@@ -13,6 +13,7 @@
     "@mantine/core": "^8.3.13",
     "@mantine/form": "^8.3.13",
     "@mantine/hooks": "^8.3.13",
+    "country-list": "^2.4.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
