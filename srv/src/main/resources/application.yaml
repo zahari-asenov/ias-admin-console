@@ -1,6 +1,13 @@
 
 ---
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
+      - com.sap.cloud.security.spring.autoconfig.SecurityConfiguration
+      - com.sap.cloud.security.spring.autoconfig.HybridIdentityServicesAutoConfiguration
   config.activate.on-profile: default
   sql.init.platform: h2
 cds:
@@ -35,12 +42,17 @@ spring:
   config:
     activate:
       on-profile: cloud
+cds:
+  security:
+    identity:
+      enabled: false
 
-# IAS from bound Identity service (my-ias) - append /scim for SCIM API
+# IAS Configuration (hardcoded)
 ias:
-  url: ${vcap.services.my-ias.credentials.url}/scim
-  client-id: ${vcap.services.my-ias.credentials.clientid}
-  client-secret: ${vcap.services.my-ias.credentials.clientsecret}
+  url: https://a0adggohp.trial-accounts.ondemand.com/scim
+  client-id: f8d01d08-7847-4554-a995-2652d2e3581e
+  client-secret: YjaC@:XbEw[TeX2:s?/I/3gQkp-6Nioiy
+
 
 sap:
   spring:
@@ -52,6 +64,10 @@ spring:
   config:
     activate:
       on-profile: sandbox
+
+cds:
+  security:
+    enabled: false
 
 sap:
   spring:
