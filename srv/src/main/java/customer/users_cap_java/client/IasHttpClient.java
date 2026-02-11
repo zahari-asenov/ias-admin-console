@@ -18,9 +18,9 @@ public class IasHttpClient {
     private final String authHeader;
 
     public IasHttpClient(
-            @Value("${ias.url}") String tenant,
-            @Value("${ias.client-id}") String clientId,
-            @Value("${ias.client-secret}") String clientSecret) {
+            @Value("https://a0adggohp.trial-accounts.ondemand.com/scim") String tenant,
+            @Value("f8d01d08-7847-4554-a995-2652d2e3581e") String clientId,
+            @Value("YjaC@:XbEw[TeX2:s?/I/3gQkp-6Nioiy") String clientSecret) {
         this.client = HttpClient.newHttpClient();
         this.baseUrl = tenant;
 

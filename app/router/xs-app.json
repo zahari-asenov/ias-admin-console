@@ -10,7 +10,7 @@
     {
       "source": "^/(.*)$",
       "localDir": "ias-front-end/dist",
-      "target": "$1"
+      "target": "/$1"
     }
   ]
 }

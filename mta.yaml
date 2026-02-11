@@ -11,8 +11,11 @@ modules:
     parameters:
       instances: 1
       buildpack: sap_java_buildpack_jakarta
+      routes:
+        - route: "https://38c28512trial-dev-users-cap-java-srv.cfapps.ap21.hana.ondemand.com"
+        - route: "https://38c28512trial-dev-users-cap-java-srv.cert.cfapps.ap21.hana.ondemand.com"
     properties:
-      SPRING_PROFILES_ACTIVE: cloud,sandbox
+      SPRING_PROFILES_ACTIVE: cloud
       JBP_CONFIG_COMPONENTS: "jres: ['com.sap.xs.java.buildpack.jre.SAPMachineJRE']"
       JBP_CONFIG_SAP_MACHINE_JRE: '{ version: 21.+ }'
     build-parameters:
@@ -27,6 +30,10 @@ modules:
     requires:
       - name: users-cap-java-db
       - name: my-ias
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: srv
 
   - name: users-cap-java-db-deployer
     type: hdb
@@ -51,16 +58,22 @@ modules:
       - name: srv-api
         group: destinations
         properties:
-          name: srv-api # must be used in xs-app.json as well
+          name: srv-api
           url: ~{srv-url}
           forwardAuthToken: true
+          forwardAuthCertificates: true
       - name: my-ias
+        parameters:
+          config:
+            credential-type: X509_GENERATED
+            app-identifier: approuter
     provides:
       - name: app-api
         properties:
           app-protocol: ${protocol}
           app-uri: ${default-uri}
           url: ${default-url}
+          
 
 resources:
   - name: users-cap-java-db

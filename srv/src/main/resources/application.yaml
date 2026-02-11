@@ -1,23 +1,20 @@
 
 ---
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
+      - com.sap.cloud.security.spring.autoconfig.SecurityConfiguration
+      - com.sap.cloud.security.spring.autoconfig.HybridIdentityServicesAutoConfiguration
+      - com.sap.cloud.security.spring.autoconfig.XsuaaTokenFlowAutoConfiguration
   config.activate.on-profile: default
   sql.init.platform: h2
 cds:
   data-source.auto-config.enabled: false
   security:
     enabled: false
-# IAS Configuration - use env vars for secrets (IAS_CLIENT_SECRET, etc.)
-ias:
-  url: ${IAS_URL:https://a0adggohp.trial-accounts.ondemand.com/scim}
-  client-id: ${IAS_CLIENT_ID:f8d01d08-7847-4554-a995-2652d2e3581e}
-  client-secret: ${IAS_CLIENT_SECRET:YjaC@:XbEw[TeX2:s?/I/3gQkp-6Nioiy
-}
-sap:
-  spring:
-    security:
-      identity:
-        prooftoken: false
 ---
 management:
   endpoint:
@@ -41,37 +38,9 @@ spring:
   config:
     activate:
       on-profile: cloud
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${IAS_ISSUER_URI:https://a0adggohp.trial-accounts.ondemand.com}
-
 cds:
   security:
-    identity:
-      enabled: true
     authentication:
-      mode: always
-# IAS for IasHttpClient (SCIM API) - credentials from env vars or VCAP (IAS binding)
-ias:
-  url: ${IAS_URL:https://a0adggohp.trial-accounts.ondemand.com/scim}
-  client-id: ${IAS_CLIENT_ID:f8d01d08-7847-4554-a995-2652d2e3581e}
-  client-secret: ${IAS_CLIENT_SECRET:}
+      kind: ias
 
-sap:
-  spring:
-    security:
-      identity:
-        prooftoken: false
----
-spring:
-  config:
-    activate:
-      on-profile: sandbox
-
-sap:
-  spring:
-    security:
-      identity:
-        prooftoken: false
+#
