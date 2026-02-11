@@ -8,17 +8,13 @@ spring:
       - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
       - com.sap.cloud.security.spring.autoconfig.SecurityConfiguration
       - com.sap.cloud.security.spring.autoconfig.HybridIdentityServicesAutoConfiguration
+      - com.sap.cloud.security.spring.autoconfig.XsuaaTokenFlowAutoConfiguration
   config.activate.on-profile: default
   sql.init.platform: h2
 cds:
   data-source.auto-config.enabled: false
   security:
     enabled: false
-# IAS Configuration
-ias:
-  url: https://a0adggohp.trial-accounts.ondemand.com/scim
-  client-id: f8d01d08-7847-4554-a995-2652d2e3581e
-  client-secret: YjaC@:XbEw[TeX2:s?/I/3gQkp-6Nioiy
 ---
 management:
   endpoint:
@@ -44,33 +40,7 @@ spring:
       on-profile: cloud
 cds:
   security:
-    identity:
-      enabled: false
+    authentication:
+      kind: ias
 
-# IAS Configuration (hardcoded)
-ias:
-  url: https://a0adggohp.trial-accounts.ondemand.com/scim
-  client-id: f8d01d08-7847-4554-a995-2652d2e3581e
-  client-secret: YjaC@:XbEw[TeX2:s?/I/3gQkp-6Nioiy
-
-
-sap:
-  spring:
-    security:
-      identity:
-        prooftoken: false
----
-spring:
-  config:
-    activate:
-      on-profile: sandbox
-
-cds:
-  security:
-    enabled: false
-
-sap:
-  spring:
-    security:
-      identity:
-        prooftoken: false
+#

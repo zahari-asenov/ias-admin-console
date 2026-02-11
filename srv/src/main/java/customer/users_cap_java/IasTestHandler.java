@@ -27,13 +27,13 @@ public class IasTestHandler implements CommandLineRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(IasTestHandler.class);
 
-    @Value("${ias.url}")
+    @Value("https://a0adggohp.trial-accounts.ondemand.com/scim")
     private String iasUrl;
 
-    @Value("${ias.client-id}")
+    @Value("f8d01d08-7847-4554-a995-2652d2e3581e")
     private String iasClientId;
 
-    @Value("${ias.client-secret}")
+    @Value("YjaC@:XbEw[TeX2:s?/I/3gQkp-6Nioiy")
     private String iasClientSecret;
 
     @Override
